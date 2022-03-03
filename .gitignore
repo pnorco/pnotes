@@ -7,3 +7,5 @@ node_modules
 .psci
 output
 .psc-ide-port
+.spago/
+src/wwwroot/index.js

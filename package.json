@@ -1,0 +1,24 @@
+{
+  "name": "pnotes",
+  "version": "1.0.0",
+  "description": "a note taking web app",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "spago build && npx esbuild build/client.js --bundle --minify --format=cjs --outfile=src/wwwroot/index.js",
+    "server": "npm run build && spago run -m Server.Main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pnorco/pnotes.git"
+  },
+  "author": "Tiago Almeida Dall'Igna",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pnorco/pnotes/issues"
+  },
+  "homepage": "https://github.com/pnorco/pnotes#readme"
+}

@@ -8,6 +8,7 @@
   , "maybe"
   , "node-fs-aff"
   , "prelude"
+  , "spork"
   , "tuples"
   ]
 , packages = ./packages.dhall

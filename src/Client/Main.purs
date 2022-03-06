@@ -3,12 +3,13 @@ module Client.Main where
 import Prelude
 
 import Client.FFI as FFI
-import Data.Array (cons, delete)
+import Data.Array (cons, delete, findIndex, updateAt)
 import Data.Const (Const)
 import Data.DateTime (DateTime)
 import Data.Either (fromRight)
 import Data.Formatter.DateTime (formatDateTime)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String as Array
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -34,7 +35,7 @@ type Model =
 initModel :: Model
 initModel = 
   { currentNote: Nothing
-  , notes: [{title:"note1", content:"the note", createdAt: "1"}]
+  , notes: []
   , error: Nothing
   }
 
@@ -43,11 +44,11 @@ data Action
   | Add
   | Added String
   | Focused String
+  | Edit Note
   | Save
   | Delete Note
   | UpdateNoteTitle String
   | UpdateNoteContent String
-  | UpdateNoteDate String
 
 update ∷ Model -> (Action -> Transition ActionAff Model Action)
 update model = case _ of
@@ -59,9 +60,13 @@ update model = case _ of
     in { model: model {currentNote = Just current {createdAt=date}}, effects: App.lift ((Focus "newNoteTitle") Focused) }
   Focused _ ->
     purely model
+  Edit note ->
+    { model: model {currentNote = Just note}, effects: App.lift ((Focus "newNoteTitle") Focused) }
   Save -> 
     let current = fromMaybe {title:"", content:"", createdAt: "0"} model.currentNote
-        notes' = cons current model.notes
+        notes' = case findIndex (\a -> a.createdAt == current.createdAt) model.notes of
+          Nothing -> cons current model.notes
+          Just i -> fromMaybe model.notes (updateAt i current model.notes)
     in purely model { notes = notes', currentNote = Nothing}
   Delete note -> 
     purely model { notes = delete note model.notes }
@@ -71,9 +76,6 @@ update model = case _ of
   UpdateNoteContent str ->
     let note = fromMaybe {title:"", content:"", createdAt: "0"} model.currentNote
     in purely model { currentNote = Just note{ content=str } }
-  UpdateNoteDate str ->
-    let note = fromMaybe {title:"", content:"", createdAt: ""} model.currentNote
-    in purely model { currentNote = Just note{ createdAt=str } }
 
 data ActionAff next
   = AddAff (String -> next)
@@ -103,9 +105,8 @@ render model =
           [ H.button [ H.onClick (H.always_ Add), H.id_ "addNote" ] [ H.text "Add Note" ]]
       Just note -> 
         H.div [ H.classes ["note"] ] 
-        [ H.input [ H.type_ H.InputText, H.classes ["date"], H.onValueInput (H.always UpdateNoteDate), H.value note.createdAt ]
-        , H.input [ H.type_ H.InputText, H.id_ "newNoteTitle", H.classes ["title"], H.onValueInput (H.always UpdateNoteTitle), H.value note.title ]
-        , H.textarea [ H.classes ["content"], H.onValueInput (H.always UpdateNoteContent), H.value note.content]
+        [ H.input [ H.type_ H.InputText, H.id_ "newNoteTitle", H.placeholder "Title", H.classes ["title"], H.onValueInput (H.always UpdateNoteTitle), H.value note.title ]
+        , H.textarea [ H.classes ["content"], H.placeholder "Content", H.onValueInput (H.always UpdateNoteContent), H.value note.content]
         , H.button
           [ H.onClick (H.always_ Save) ]
           [ H.text "save" ]
@@ -115,7 +116,7 @@ render model =
 
 renderNote :: Note -> Html Action
 renderNote note =
-  H.li [H.classes ["note"]] 
+  H.li [H.classes ["note"], H.onClick (H.always_ (Edit note))] 
     [ H.i [H.classes ["mdi", "mdi-delete", "small", "delete"], H.onClick (H.always_ $ Delete note)] []
     , H.div [H.classes ["createdAt"]] [H.text note.createdAt]
     , H.div [H.classes ["title"]] [H.text note.title]

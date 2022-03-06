@@ -51,7 +51,7 @@ ul.notes
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   grid-gap: 10px;
 }
 
@@ -61,7 +61,7 @@ ul.notes
   border: solid 1px #999944;
   padding: 5px;
   position: relative;
-  max-width: 400px;
+  max-width: 500px;
 }
 
 li.note > .title
@@ -79,7 +79,7 @@ li.note > i.delete
 div.note
 {
   margin: 10px auto;
-  max-width: 300px;
+  max-width: 500px;
 }
 
 input, textarea

@@ -15,6 +15,7 @@
   , "now"
   , "prelude"
   , "spork"
+  , "strings"
   , "tuples"
   ]
 , packages = ./packages.dhall

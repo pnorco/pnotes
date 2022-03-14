@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/pnorco/pnotes/issues"
   },
-  "homepage": "https://github.com/pnorco/pnotes#readme"
+  "homepage": "https://github.com/pnorco/pnotes#readme",
+  "dependencies": {
+    "sqlite": "^4.0.25",
+    "sqlite3": "^5.0.2"
+  }
 }

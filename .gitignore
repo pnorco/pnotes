@@ -9,3 +9,4 @@ output
 .psc-ide-port
 .spago/
 src/wwwroot/index.js
+*.db

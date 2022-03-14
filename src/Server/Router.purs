@@ -6,14 +6,19 @@ import Data.Array (length, take)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff.Class (liftAff)
 import Effect.Class.Console (log)
-import Node.FS.Aff (exists, readFile) as FS
 import HTTPure as HTTPure
-
+import Node.FS.Aff (exists, readFile) as FS
+import Server.Api as API
+import Server.Database as DB
 
 router :: HTTPure.Request -> HTTPure.ResponseM
-router { body, headers, method, path } = case method, path of
+router { body, query, headers, method, path } = case method, path of
+
+  HTTPure.Get, [ "api", "notes" ] -> API.getNotes "token"
+  HTTPure.Post, [ "api", "note" ] -> API.saveNote "token" "body"
+  HTTPure.Delete, [ "api", "note", id ] -> API.deleteNote "token" id
   
-  HTTPure.Get, [ "ping" ] -> HTTPure.ok $ "pong"
+  HTTPure.Get, [ "api", "ping" ] -> HTTPure.ok $ "pong"
   HTTPure.Get, [ ] -> serveFile' "text/html" "src/wwwroot/index.html"
   HTTPure.Get, [ "static", filename ] -> serveFile ("src/wwwroot/" <> filename)
 

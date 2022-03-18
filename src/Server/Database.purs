@@ -54,10 +54,10 @@ saveNote note =
   run
     """
       INSERT INTO notes (title, content, createdAt) VALUES (@title, @content, @createdAt)
-      ON CONFLICT(createdAt) DO UPDATE SET title=@ttitle, content=@content WHERE createdAt=@createdAt
+      ON CONFLICT(createdAt) DO UPDATE SET title=@title, content=@content WHERE createdAt=@createdAt
     """
     [ note.title, note.content, note.createdAt ]
 
 deleteNote :: String -> Aff Unit
 deleteNote createdAt =
-  run "DELETE notes WHERE createdAt=@createdAt" [ createdAt ]
+  run "DELETE FROM notes WHERE createdAt=@createdAt" [ createdAt ]

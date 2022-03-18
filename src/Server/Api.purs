@@ -22,10 +22,10 @@ saveNote :: String -> String -> HTTPure.ResponseM
 saveNote token body = case JSON.readJSON body of
   Right (note :: Note) -> do
     notes <- DB.saveNote note
-    HTTPure.ok "ok" -- $ JSON.writeJSON {notes: notes}
-  Left err -> HTTPure.unauthorized
+    HTTPure.ok "ok"
+  Left err -> HTTPure.internalServerError (show err)
 
 deleteNote :: String -> String -> HTTPure.ResponseM
-deleteNote token createdAt = do
-    notes <- DB.deleteNote createdAt
-    HTTPure.ok "ok" -- $ JSON.writeJSON {notes: notes}
+deleteNote token id = do
+    notes <- DB.deleteNote id
+    HTTPure.ok "ok"

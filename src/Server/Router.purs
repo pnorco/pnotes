@@ -12,22 +12,25 @@ import Server.Api as API
 import Server.Database as DB
 
 router :: HTTPure.Request -> HTTPure.ResponseM
-router { body, query, headers, method, path } = case method, path of
+router { body, query, headers, method, path } = do
 
-  HTTPure.Get, [ "api", "notes" ] -> API.getNotes "token"
-  HTTPure.Post, [ "api", "note" ] -> API.saveNote "token" "body"
-  HTTPure.Delete, [ "api", "note", id ] -> API.deleteNote "token" id
-  
-  HTTPure.Get, [ "api", "ping" ] -> HTTPure.ok $ "pong"
-  HTTPure.Get, [ ] -> serveFile' "text/html" "src/wwwroot/index.html"
-  HTTPure.Get, [ "static", filename ] -> serveFile ("src/wwwroot/" <> filename)
+  bodyString <- HTTPure.toString body
 
-  HTTPure.Get, _ 
-    | startsWith path [ "../" ] -> HTTPure.unauthorized
+  case method, path of
+    HTTPure.Get, [ "api", "notes" ] -> API.getNotes "token"
+    HTTPure.Post, [ "api", "note" ] -> API.saveNote "token" bodyString
+    HTTPure.Delete, [ "api", "note", id ] -> API.deleteNote "token" id
+    
+    HTTPure.Get, [ "api", "ping" ] -> HTTPure.ok $ "pong"
+    HTTPure.Get, [ ] -> serveFile' "text/html" "src/wwwroot/index.html"
+    HTTPure.Get, [ "static", filename ] -> serveFile ("src/wwwroot/" <> filename)
 
-  _, _ -> do
-    log $ "Not found: " <> show path
-    HTTPure.unauthorized
+    HTTPure.Get, _ 
+      | startsWith path [ "../" ] -> HTTPure.unauthorized
+
+    _, _ -> do
+      log $ "Not found: " <> show path
+      HTTPure.unauthorized
 
 startsWith :: Array String -> Array String -> Boolean
 startsWith s t = t == (take (length t) s)

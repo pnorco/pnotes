@@ -1,0 +1,11 @@
+POST http://localhost:8080/api/note
+
+{ "title": "the test note"
+, "content": "bla bla bla"
+, "createdAt": "2022-03-19T10:20:30"
+}
+
+GET http://localhost:8080/api/notes
+
+
+DELETE http://localhost:8080/api/note/2022-03-19

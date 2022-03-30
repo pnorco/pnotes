@@ -18,8 +18,10 @@
   , "now"
   , "prelude"
   , "simple-json"
+  , "spec"
   , "spork"
   , "strings"
+  , "test-unit"
   , "transformers"
   , "tuples"
   ]

@@ -9,7 +9,6 @@ import Data.DateTime (DateTime)
 import Data.Either (fromRight)
 import Data.Formatter.DateTime (formatDateTime)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String as Array
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -21,11 +20,8 @@ import Spork.Html as H
 import Spork.Interpreter (merge, never, throughAff)
 import Spork.Transition (Transition, purely)
 
-type Note =
-    { title :: String
-    , content :: String
-    , createdAt :: String
-    }
+import Common.Model (Note)
+
 type Model = 
   { currentNote :: Maybe Note
   , notes :: Array Note

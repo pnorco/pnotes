@@ -6,23 +6,31 @@ import Data.Array (length, take)
 import Data.Tuple.Nested ((/\))
 import Effect.Aff.Class (liftAff)
 import Effect.Class.Console (log)
-import Node.FS.Aff (exists, readFile) as FS
 import HTTPure as HTTPure
-
+import Node.FS.Aff (exists, readFile) as FS
+import Server.Api as API
+import Server.Database as DB
 
 router :: HTTPure.Request -> HTTPure.ResponseM
-router { body, headers, method, path } = case method, path of
-  
-  HTTPure.Get, [ "ping" ] -> HTTPure.ok $ "pong"
-  HTTPure.Get, [ ] -> serveFile' "text/html" "src/wwwroot/index.html"
-  HTTPure.Get, [ "static", filename ] -> serveFile ("src/wwwroot/" <> filename)
+router { body, query, headers, method, path } = do
 
-  HTTPure.Get, _ 
-    | startsWith path [ "../" ] -> HTTPure.unauthorized
+  bodyString <- HTTPure.toString body
 
-  _, _ -> do
-    log $ "Not found: " <> show path
-    HTTPure.unauthorized
+  case method, path of
+    HTTPure.Get, [ "api", "notes" ] -> API.getNotes "token"
+    HTTPure.Post, [ "api", "note" ] -> API.saveNote "token" bodyString
+    HTTPure.Delete, [ "api", "note", id ] -> API.deleteNote "token" id
+    
+    HTTPure.Get, [ "api", "ping" ] -> HTTPure.ok $ "pong"
+    HTTPure.Get, [ ] -> serveFile' "text/html" "src/wwwroot/index.html"
+    HTTPure.Get, [ "static", filename ] -> serveFile ("src/wwwroot/" <> filename)
+
+    HTTPure.Get, _ 
+      | startsWith path [ "../" ] -> HTTPure.unauthorized
+
+    _, _ -> do
+      log $ "Not found: " <> show path
+      HTTPure.unauthorized
 
 startsWith :: Array String -> Array String -> Boolean
 startsWith s t = t == (take (length t) s)

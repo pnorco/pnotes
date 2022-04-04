@@ -3,6 +3,9 @@ module Client.Main where
 import Prelude
 
 import Client.FFI as FFI
+import Common.Helpers.AjaxHelper (get)
+import Common.Model (Note)
+import Common.Model as M
 import Data.Array (cons, delete, findIndex, updateAt)
 import Data.Const (Const)
 import Data.DateTime (DateTime)
@@ -19,8 +22,6 @@ import Spork.Html (Html)
 import Spork.Html as H
 import Spork.Interpreter (merge, never, throughAff)
 import Spork.Transition (Transition, purely)
-
-import Common.Model (Note)
 
 type Model = 
   { currentNote :: Maybe Note
@@ -45,10 +46,16 @@ data Action
   | Delete Note
   | UpdateNoteTitle String
   | UpdateNoteContent String
+  | NotesLoaded M.GetNotesResponse
 
 update ∷ Model -> (Action -> Transition ActionAff Model Action)
 update model = case _ of
-  Initialize -> purely model
+  Initialize -> 
+    { model: model, effects: App.lift ((GetNotes "token") NotesLoaded) }
+  NotesLoaded reponse -> case reponse of
+    M.ResponseError e -> purely model { error = Just (show e) }
+    M.Response r ->
+      purely model { notes = r }
   Add ->
     { model: model, effects: App.lift (AddAff Added) }
   Added date ->
@@ -76,6 +83,7 @@ update model = case _ of
 data ActionAff next
   = AddAff (String -> next)
   | Focus String (String -> next)
+  | GetNotes String (M.GetNotesResponse -> next)
 
 displayDatetime :: DateTime -> String
 displayDatetime d = 
@@ -90,6 +98,9 @@ updateAff aff = case aff of
   Focus id next -> do
     _ <- liftEffect $ FFI.focus id
     pure $ next id
+  GetNotes token next -> do
+    notes <- get { url: "/api/notes", token: Just token, content: { } }
+    pure $ next notes
 
 render ∷ Model → Html Action
 render model =
@@ -98,7 +109,9 @@ render model =
       Nothing -> 
         H.div 
           [ H.styles [ (H.Style "text-align" "center"), (H.Style "margin-bottom" "10px")]] 
-          [ H.button [ H.onClick (H.always_ Add), H.id_ "addNote" ] [ H.text "Add Note" ]]
+          [ H.button [ H.onClick (H.always_ Add), H.id_ "addNote" ] [ H.text "Add Note" ]
+          , H.button [ H.onClick (H.always_ Initialize), H.id_ "loadNotes" ] [ H.text "load notes" ]
+          ]
       Just note -> 
         H.div [ H.classes ["note"] ] 
         [ H.input [ H.type_ H.InputText, H.id_ "newNoteTitle", H.placeholder "Title", H.classes ["title"], H.onValueInput (H.always UpdateNoteTitle), H.value note.title ]
@@ -108,6 +121,14 @@ render model =
           [ H.text "save" ]
         ]
     , H.ul [H.classes ["notes"]] $ renderNote <$> model.notes
+    , case model.error of
+        Nothing -> H.text ""
+        Just e -> 
+          H.div 
+          [ H.classes ["error-message", "notification", "is-warning"]] 
+          [ H.button [H.classes ["delete"]] []
+          , H.text e 
+          ]
     ]
 
 renderNote :: Note -> Html Action

@@ -23,6 +23,8 @@
   "homepage": "https://github.com/pnorco/pnotes#readme",
   "dependencies": {
     "sqlite": "^4.0.25",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "url": "^0.11.0",
+    "xhr2": "^0.2.1"
   }
 }

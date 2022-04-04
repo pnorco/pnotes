@@ -16,7 +16,7 @@ type Body = String
 getNotes :: String -> HTTPure.ResponseM
 getNotes token = do
   notes <- DB.getNotes token
-  HTTPure.ok $ JSON.writeJSON {notes: notes}
+  HTTPure.ok $ JSON.writeJSON notes
 
 saveNote :: String -> String -> HTTPure.ResponseM
 saveNote token body = case JSON.readJSON body of

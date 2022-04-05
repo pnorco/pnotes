@@ -3,6 +3,7 @@ module Server.Api where
 import Prelude
 
 import Common.Model (Note)
+import Common.Model as M
 import Data.Either (Either(..))
 import Data.Maybe (fromMaybe)
 import HTTPure as HTTPure
@@ -16,7 +17,7 @@ type Body = String
 getNotes :: String -> HTTPure.ResponseM
 getNotes token = do
   notes <- DB.getNotes token
-  HTTPure.ok $ JSON.writeJSON notes
+  HTTPure.ok $ JSON.writeJSON (M.Response notes)
 
 saveNote :: String -> String -> HTTPure.ResponseM
 saveNote token body = case JSON.readJSON body of

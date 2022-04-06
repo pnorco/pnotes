@@ -50,3 +50,6 @@ post = request Method.POST
 
 get :: ∀ a b. WriteForeign a => Decode b => Request a -> Aff (M.Response b)
 get = request Method.GET
+
+delete :: ∀ a b. WriteForeign a => Decode b => Request a -> Aff (M.Response b)
+delete = request Method.DELETE

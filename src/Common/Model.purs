@@ -23,6 +23,8 @@ type Note =
     }
 
 type GetNotesResponse = Response (Array Note)
+type SaveNoteResponse = Response String
+type DeleteNoteResponse = Response String
 
 derive instance Generic ApiError _
 instance Encode ApiError where

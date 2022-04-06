@@ -3,7 +3,7 @@ module Client.Main where
 import Prelude
 
 import Client.FFI as FFI
-import Common.Helpers.AjaxHelper (get)
+import Common.Helpers.AjaxHelper as Ajax
 import Common.Model (Note)
 import Common.Model as M
 import Data.Array (cons, delete, findIndex, updateAt)
@@ -47,15 +47,22 @@ data Action
   | UpdateNoteTitle String
   | UpdateNoteContent String
   | NotesLoaded M.GetNotesResponse
+  | NoteSaved M.SaveNoteResponse
+  | NoteDeleted M.DeleteNoteResponse
 
 update ∷ Model -> (Action -> Transition ActionAff Model Action)
 update model = case _ of
-  Initialize -> 
-    { model: model, effects: App.lift ((GetNotes "token") NotesLoaded) }
+  Initialize -> purely model
   NotesLoaded reponse -> case reponse of
     M.ResponseError e -> purely model { error = Just (show e) }
-    M.Response r ->
-      purely model { notes = r }
+    M.Response r -> purely model { notes = r }
+  NoteSaved reponse -> case reponse of
+    M.ResponseError e -> purely model { error = Just (show e) }
+    M.Response r -> purely model
+  NoteDeleted reponse -> case reponse of
+    M.ResponseError e -> purely model { error = Just (show e) }
+    M.Response r -> purely model
+
   Add ->
     { model: model, effects: App.lift (AddAff Added) }
   Added date ->
@@ -70,9 +77,9 @@ update model = case _ of
         notes' = case findIndex (\a -> a.createdAt == current.createdAt) model.notes of
           Nothing -> cons current model.notes
           Just i -> fromMaybe model.notes (updateAt i current model.notes)
-    in purely model { notes = notes', currentNote = Nothing}
+    in { model: model { notes = notes', currentNote = Nothing}, effects: App.lift ((SaveNote "token" current) NoteSaved) }
   Delete note -> 
-    purely model { notes = delete note model.notes }
+    { model: model { notes = delete note model.notes, currentNote = Nothing }, effects: App.lift ((DeleteNote "token" note) NoteDeleted) }
   UpdateNoteTitle str -> 
     let note = fromMaybe {title:"", content:"", createdAt: "0"} model.currentNote
     in purely model { currentNote = Just note{ title=str } }
@@ -84,6 +91,8 @@ data ActionAff next
   = AddAff (String -> next)
   | Focus String (String -> next)
   | GetNotes String (M.GetNotesResponse -> next)
+  | SaveNote String Note (M.SaveNoteResponse -> next)
+  | DeleteNote String Note (M.DeleteNoteResponse -> next)
 
 displayDatetime :: DateTime -> String
 displayDatetime d = 
@@ -99,8 +108,15 @@ updateAff aff = case aff of
     _ <- liftEffect $ FFI.focus id
     pure $ next id
   GetNotes token next -> do
-    notes <- get { url: "/api/notes", token: Just token, content: { } }
+    notes <- Ajax.get { url: "/api/notes", token: Just token, content: { } }
     pure $ next notes
+  SaveNote token note next -> do
+    resp <- Ajax.post { url: "/api/note", token: Just token, content: note }
+    pure $ next resp
+  DeleteNote token note next -> do
+    let url = "/api/note/" <> note.createdAt
+    resp <- Ajax.delete { url: url, token: Just token, content: note }
+    pure $ next resp
 
 render ∷ Model → Html Action
 render model =
@@ -110,7 +126,6 @@ render model =
         H.div 
           [ H.styles [ (H.Style "text-align" "center"), (H.Style "margin-bottom" "10px")]] 
           [ H.button [ H.onClick (H.always_ Add), H.id_ "addNote" ] [ H.text "Add Note" ]
-          , H.button [ H.onClick (H.always_ Initialize), H.id_ "loadNotes" ] [ H.text "load notes" ]
           ]
       Just note -> 
         H.div [ H.classes ["note"] ] 
@@ -133,18 +148,18 @@ render model =
 
 renderNote :: Note -> Html Action
 renderNote note =
-  H.li [H.classes ["note"], H.onClick (H.always_ (Edit note))] 
+  H.li [H.classes ["note"]] 
     [ H.i [H.classes ["mdi", "mdi-delete", "small", "delete"], H.onClick (H.always_ $ Delete note)] []
-    , H.div [H.classes ["createdAt"]] [H.text note.createdAt]
-    , H.div [H.classes ["title"]] [H.text note.title]
-    , H.div [H.classes ["content"]] [H.text note.content]
+    , H.div [H.classes ["createdAt"], H.onClick (H.always_ (Edit note))] [H.text note.createdAt]
+    , H.div [H.classes ["title"], H.onClick (H.always_ (Edit note))] [H.text note.title]
+    , H.div [H.classes ["content"], H.onClick (H.always_ (Edit note))] [H.text note.content]
     ]
 
 handleErrors :: Error -> Effect Unit
 handleErrors _ = pure unit
 
 app ∷ App.App ActionAff (Const Void) Model Action
-app = { update, render, subs: const mempty, init: purely initModel }
+app = { update, render, subs: const mempty, init: {model: initModel, effects: App.lift ((GetNotes "token") NotesLoaded)} }
 
 main ∷ Effect Unit
 main = do
